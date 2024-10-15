@@ -1,0 +1,27 @@
+{
+  "name": "northrook/core-services",
+  "description": "A Symfony bundle providing core services. ",
+  "type": "symfony-bundle",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Martin",
+      "email": "mn@northrook.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Core\\": "src/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "php": ">=8.3",
+    "symfony/http-kernel": "^7.1",
+    "symfony/dependency-injection": "^7.1"
+  },
+  "require-dev": {
+    "northrook/dev-env": "dev-main"
+  }
+}
