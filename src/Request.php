@@ -61,7 +61,7 @@ final class Request
             'method'     => $this->currentRequest()->getMethod(),
             'controller' => $this->requestController(),
             'type'       => $this->type(),
-            'isHtmx'     => $this->type( 'application/htmx'),
+            'isHtmx'     => $this->type( 'application/htmx' ),
             'isJson'     => $this->type( 'application/json' ),
             'isHtml'     => $this->type( 'text/html' ),
             default      => throw new RuntimeException( 'Undefined property: '.$property ),

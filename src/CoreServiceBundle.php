@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Core\Service;
 
-// Pathfinder cache using array-store
-// Request
-// Headers
-// Auth?
-// Settings
 use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -51,19 +46,16 @@ final class CoreServiceBundle extends AbstractBundle
             ->autowire();
 
         $services
+            // Current Request handler
+            ->set( Request::class )
+            ->args( [service( 'request_stack' )] )
+
             // Request and Response headers
             ->set( Headers::class )
-            ->args( [
-                service( 'request_stack' ),
-                service( 'router.request_context' ),
-            ] )
+            ->args( [service( 'request_stack' )] )
 
             // Find and return registered paths
             ->set( Pathfinder::class )
-
-            // Current Request handler
-            ->set( Request::class )
-            ->args( [service( 'request_stack' ), service( 'http_kernel' )] )
 
             // Settings handler
             ->set( Settings::class );
