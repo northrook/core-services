@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core;
+namespace Core\Service;
 
 // Pathfinder cache using array-store
 // Request
@@ -22,7 +22,7 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
  *
  * @author Martin Nielsen
  */
-final class CoreServicesBundle extends AbstractBundle
+final class CoreServiceBundle extends AbstractBundle
 {
     #[Override]
     public function getPath() : string

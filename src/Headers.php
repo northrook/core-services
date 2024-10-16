@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Core;
+namespace Core\Service;
 
 use Symfony\Component\HttpFoundation\{HeaderBag, RequestStack, ResponseHeaderBag};
 use Symfony\Component\Routing\RequestContext;

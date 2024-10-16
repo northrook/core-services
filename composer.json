@@ -11,7 +11,7 @@
   ],
   "autoload": {
     "psr-4": {
-      "Core\\": "src/"
+      "Core\\Service\\": "src/"
     }
   },
   "minimum-stability": "dev",
@@ -19,7 +19,8 @@
   "require": {
     "php": ">=8.3",
     "symfony/http-kernel": "^7.1",
-    "symfony/dependency-injection": "^7.1"
+    "symfony/dependency-injection": "^7.1",
+    "symfony/routing": "^7.1"
   },
   "require-dev": {
     "northrook/dev-env": "dev-main"
