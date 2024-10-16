@@ -8,8 +8,7 @@ use Override;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
-use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
-
+use function Symfony\Component\DependencyInjection\Loader\Configurator\{param, service};
 /**
  * Core shared services.
  *
@@ -56,6 +55,10 @@ final class CoreServiceBundle extends AbstractBundle
 
             // Find and return registered paths
             ->set( Pathfinder::class )
+            ->args( [
+                service( 'parameter_bag' ),
+                '%kernel.cache_dir%/pathfinder.cache.php',
+            ] )
 
             // Settings handler
             ->set( Settings::class );
