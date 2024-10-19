@@ -17,19 +17,37 @@ final class Pathfinder
     private readonly ArrayStore $pathfinderCache;
 
     public function __construct(
-        private readonly ParameterBagInterface $parameterBag,
-        private readonly string                $pathfinderCachePath,
+            private readonly ParameterBagInterface $parameterBag,
+            private readonly string                $pathfinderCachePath,
     ) {}
+
+    private function isLocalPath( string $path ) : false | string
+    {
+        static $projectRootDirectory;
+        $projectRootDirectory ??= $this->normalize( $this->parameterBag->get( 'kernel.project_dir' ) );
+
+        $normalizedPath = $this->normalize( $path );
+
+        if ( ! \str_starts_with( $normalizedPath, $projectRootDirectory ) ){
+            return false;
+        }
+
+        return $normalizedPath;
+    }
 
     public function get( string $path ) : ?string
     {
+        if ( $this->isLocalPath( $path ) ) {
+            return $path;
+        }
+
         return $this->pathfinder()->get( $this->cacheKey( $path ) ) ?? $this->resolvePath( $path );
     }
 
     public function getPath( string $path ) : ?Path
     {
-        $path = $this->get( $path );
-        return $path ? new Path( $path ) : null;
+        $resolved = $this->get( $path );
+        return $resolved ? new Path( $resolved ) : null;
     }
 
     public function has( string $path ) : bool
@@ -107,13 +125,13 @@ final class Pathfinder
         }
         catch ( ParameterNotFoundException $exception ) {
             return E_Value::error(
-                '{pathfinder} requested the non-existent paraneter {parameter}.',
-                [
-                    'pathfinder' => $this::class,
-                    'parameter'  => $get,
-                ],
-                $exception,
-                false,
+                    '{pathfinder} requested the non-existent paraneter {parameter}.',
+                    [
+                            'pathfinder' => $this::class,
+                            'parameter'  => $get,
+                    ],
+                    $exception,
+                    false,
             );
         }
     }
@@ -136,8 +154,42 @@ final class Pathfinder
     private function pathfinder() : ArrayStore
     {
         return $this->pathfinderCache ??= new ArrayStore(
-            $this->pathfinderCachePath,
-            $this::class,
+                $this->pathfinderCachePath,
+                $this::class,
         );
+    }
+
+    private function normalize( string ...$path ) : string
+    {
+
+        // Normalize separators
+        $nroamlized = \str_replace( ['\\', '/'], DIRECTORY_SEPARATOR, $path );
+
+        $isRelative = DIRECTORY_SEPARATOR === $nroamlized[0];
+
+        // Implode->Explode for separator deduplication
+        $exploded = \explode( DIRECTORY_SEPARATOR, \implode( DIRECTORY_SEPARATOR, $nroamlized ) );
+
+        // Ensure each part does not start or end with illegal characters
+        $exploded = \array_map( static fn( $item ) => \trim( $item, " \n\r\t\v\0\\/" ), $exploded );
+
+        // Filter the exploded path, and implode using the directory separator
+        $path = \implode( DIRECTORY_SEPARATOR, \array_filter( $exploded ) );
+
+        if ( ( $length = \mb_strlen( $path ) ) > ( $limit = PHP_MAXPATHLEN - 2 ) ) {
+            E_Value::error(
+                           '{method} resulted in a string of {length} characters, exceeding the {limit} character limit.'
+                           .PHP_EOL.'Operation was halted to prevent buffer overflow.',
+                           ['method' => __METHOD__, 'length' => $length, 'limit' => $limit],
+                    throw: true,
+            );
+        }
+
+        // Preserve intended relative paths
+        if ( $isRelative ) {
+            $path = DIRECTORY_SEPARATOR.$path;
+        }
+
+        return $path;
     }
 }
