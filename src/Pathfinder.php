@@ -8,27 +8,42 @@ use Northrook\ArrayStore;
 use Northrook\Exception\E_Value;
 use Northrook\Logger\Log;
 use Northrook\Resource\Path;
-use Support\Normalize;
 use Symfony\Component\DependencyInjection\Exception\ParameterNotFoundException;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use function Assert\as_string;
+use function Support\getProjectRootDirectory;
+use Throwable;
 
-final class Pathfinder
+final readonly class Pathfinder
 {
-    private readonly ArrayStore $pathfinderCache;
+    private ArrayStore $pathfinderCache;
 
     public function __construct(
-            private readonly ParameterBagInterface $parameterBag,
-            private readonly string                $pathfinderCachePath,
+        private ParameterBagInterface $parameterBag,
+        private string                $pathfinderCachePath,
     ) {}
 
-    private function isLocalPath( string $path ) : false | string
+    private function getProjectRootDirectory() : string
+    {
+        try {
+            $path = as_string( $this->parameterBag->get( 'kernel.project_dir' ) );
+        }
+        catch ( ParameterNotFoundException $exception ) {
+            Log::exception( $exception );
+            $path = getProjectRootDirectory();
+        }
+        \assert( \is_dir( $path ) );
+        return $path;
+    }
+
+    private function isLocalPath( string $path ) : false|string
     {
         static $projectRootDirectory;
-        $projectRootDirectory ??= $this->normalize( $this->parameterBag->get( 'kernel.project_dir' ) );
+        $projectRootDirectory ??= $this::normalize( $this->getProjectRootDirectory() );
 
-        $normalizedPath = $this->normalize( $path );
+        $normalizedPath = $this::normalize( $path );
 
-        if ( ! \str_starts_with( $normalizedPath, $projectRootDirectory ) ){
+        if ( ! \str_starts_with( $normalizedPath, $projectRootDirectory ) ) {
             return false;
         }
 
@@ -40,8 +55,7 @@ final class Pathfinder
         if ( $this->isLocalPath( $path ) ) {
             return $path;
         }
-
-        return $this->pathfinder()->get( $this->cacheKey( $path ) ) ?? $this->resolvePath( $path );
+        return as_string( $this->pathfinder()->get( $this->cacheKey( $path ) ) ?? $this->resolvePath( $path ), true );
     }
 
     public function getPath( string $path ) : ?Path
@@ -69,6 +83,8 @@ final class Pathfinder
         if ( false === $separator ) {
             $value = $this->parameterBag( get: $path );
 
+            \assert( \is_string( $value ) || \is_null( $value ) );
+
             if ( ! $value ) {
                 Log::warning( 'No value for {path}.', ['path' => $path] );
                 return null;
@@ -89,7 +105,7 @@ final class Pathfinder
         // );
 
         // Resolve the $root key
-        $parameter = $this->parameterBag( get: $root );
+        $parameter = as_string( $this->parameterBag( get: $root ), true );
 
         if ( ! $parameter ) {
             return null;
@@ -110,7 +126,7 @@ final class Pathfinder
      *
      * @return null|bool|ParameterBagInterface|string
      */
-    private function parameterBag( ?string $get = null, ?string $has = null ) : null|string|bool|ParameterBagInterface
+    private function parameterBag( ?string $get = null, ?string $has = null ) : bool|string|ParameterBagInterface|null
     {
         if ( ! $get && ! $has ) {
             return $this->parameterBag;
@@ -121,17 +137,17 @@ final class Pathfinder
         }
 
         try {
-            return $this->parameterBag->get( $get );
+            return as_string( $this->parameterBag->get( $get ) );
         }
-        catch ( ParameterNotFoundException $exception ) {
+        catch ( Throwable|ParameterNotFoundException $exception ) {
             return E_Value::error(
-                    '{pathfinder} requested the non-existent paraneter {parameter}.',
-                    [
-                            'pathfinder' => $this::class,
-                            'parameter'  => $get,
-                    ],
-                    $exception,
-                    false,
+                '{pathfinder} requested the non-existent paraneter {parameter}.',
+                [
+                    'pathfinder' => $this::class,
+                    'parameter'  => $get,
+                ],
+                $exception,
+                false,
             );
         }
     }
@@ -151,15 +167,35 @@ final class Pathfinder
         return $root.$tail;
     }
 
+    /**
+     * Retrieve the Pathfinder {@see ArrayStore} cache.
+     *
+     * @return ArrayStore
+     */
     private function pathfinder() : ArrayStore
     {
         return $this->pathfinderCache ??= new ArrayStore(
-                $this->pathfinderCachePath,
-                $this::class,
+            $this->pathfinderCachePath,
+            $this::class,
         );
     }
 
-    private function normalize( string ...$path ) : string
+    /**
+     * # Normalise a `string` or `string[]`, assuming it is a `path`.
+     *
+     * - If an array of strings is passed, they will be joined using the directory separator.
+     * - Normalises slashes to system separator.
+     * - Removes repeated separators.
+     * - Will throw a {@see ValueError} if the resulting string exceeds {@see PHP_MAXPATHLEN}.
+     *
+     * ```
+     * normalizePath( './assets\\\/scripts///example.js' );
+     * // => '.\assets\scripts\example.js'
+     * ```
+     *
+     * @param string ...$path
+     */
+    public static function normalize( string ...$path ) : string
     {
 
         // Normalize separators
@@ -178,10 +214,10 @@ final class Pathfinder
 
         if ( ( $length = \mb_strlen( $path ) ) > ( $limit = PHP_MAXPATHLEN - 2 ) ) {
             E_Value::error(
-                           '{method} resulted in a string of {length} characters, exceeding the {limit} character limit.'
+                '{method} resulted in a string of {length} characters, exceeding the {limit} character limit.'
                            .PHP_EOL.'Operation was halted to prevent buffer overflow.',
-                           ['method' => __METHOD__, 'length' => $length, 'limit' => $limit],
-                    throw: true,
+                ['method' => __METHOD__, 'length' => $length, 'limit' => $limit],
+                throw: true,
             );
         }
 

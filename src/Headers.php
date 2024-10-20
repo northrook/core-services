@@ -18,7 +18,7 @@ final readonly class Headers
 
     public function __construct( RequestStack $stack )
     {
-        $this->request  = $stack->getCurrentRequest()->headers;
+        $this->request  = $stack->getCurrentRequest()?->headers ?? new HeaderBag();
         $this->response = new ResponseHeaderBag();
     }
 
@@ -28,9 +28,9 @@ final readonly class Headers
      * - Assigned to the {@see Headers::$response} property.
      * - Will replace existing headers by default.
      *
-     * @param array<string, null|array|bool|float|int|string>|string $set
-     * @param null|array|bool|float|int|string                       $value
-     * @param bool                                                   $replace
+     * @param array<string, null|array<string, string>|bool|float|int|string>|string $set
+     * @param null|array<array-key,mixed>|bool|float|int|string                      $value
+     * @param bool                                                                   $replace
      *
      * @return ResponseHeaderBag
      */
@@ -47,7 +47,7 @@ final readonly class Headers
 
         $value = match ( true ) {
             \is_bool( $value ) => $value ? 'true' : 'false',
-            \is_string( $value ), \is_null( $value ), \array_is_list( $value ), => $value,
+            \is_string( $value ), \is_null( $value ), \is_array( $value ) && \array_is_list( $value ), => $value,
             default => toString( $value ),
         };
 

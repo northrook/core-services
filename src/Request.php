@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation as Http;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
+use function Assert\as_string;
 
 /**
  * Provides access to the current {@see Http\Request}.
@@ -30,6 +31,7 @@ final class Request
 {
     use PropertyAccessor;
 
+    /** @var array<array-key, ?string> */
     private array $cache = [];
 
     /**
@@ -71,7 +73,7 @@ final class Request
     /**
      * @param ?string $get
      *
-     * @return null|array|bool|float|Http\ParameterBag|int|string
+     * @return null|array<array-key,mixed>|bool|float|Http\ParameterBag|int|string
      */
     public function attributes( ?string $get = null ) : Http\ParameterBag|array|string|int|bool|float|null
     {
@@ -81,7 +83,7 @@ final class Request
     /**
      * @param ?string $get {@see Http\Request::get}
      *
-     * @return null|array|bool|float|Http\ParameterBag|int|string
+     * @return null|array<array-key,mixed>|bool|float|Http\ParameterBag|int|string
      */
     public function parameters( ?string $get = null ) : Http\ParameterBag|array|string|int|bool|float|null
     {
@@ -169,8 +171,13 @@ final class Request
     {
         $this->cache['type'] = match ( true ) {
             $this->headerBag( has : 'hx-request' )   => 'application/htmx',
-            $this->headerBag( has : 'content-type' ) => \strstr( $this->headerBag( get : 'content-type' ), ';', true ),
-            default                                  => 'text/plain',
+            $this->headerBag( has : 'content-type' ) => (
+                $type = (string) $this->headerBag( get : 'content-type' )
+            )
+                    ? \strstr( $type, ';', true )
+                            ?: $type
+                    : $type,
+            default => 'text/plain',
         };
 
         return $is ? $is === $this->cache['type'] : $this->cache['type'];
@@ -183,7 +190,7 @@ final class Request
      */
     private function route() : string
     {
-        return $this->cache['route'] ??= $this->currentRequest()->attributes->get( 'route' ) ?? '';
+        return $this->cache['route'] ??= as_string( $this->currentRequest()->attributes->get( 'route' ) );
     }
 
     /**
@@ -193,7 +200,7 @@ final class Request
      */
     private function routeName() : string
     {
-        return $this->cache['routeName'] ??= $this->currentRequest()->get( '_route' ) ?? '';
+        return $this->cache['routeName'] ??= as_string( $this->currentRequest()->get( '_route' ) );
     }
 
     /**
@@ -215,8 +222,8 @@ final class Request
      */
     private function requestController() : ?string
     {
-        return $this->cache['controller'] ??= ( \is_array( $controller = $this->parameters( '_controller' ) ) )
+        return $this->cache['controller'] ??= as_string( ( \is_array( $controller = $this->parameters( '_controller' ) ) )
                 ? \implode( '::', $controller )
-                : $controller;
+                : $controller, true );
     }
 }

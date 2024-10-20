@@ -24,5 +24,8 @@
   },
   "require-dev": {
     "northrook/dev-env": "dev-main"
+  },
+  "scripts": {
+    "phpstan": "vendor/bin/phpstan analyse"
   }
 }
