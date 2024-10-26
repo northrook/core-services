@@ -49,10 +49,6 @@ final class CoreServiceBundle extends AbstractBundle
             ->set( Request::class )
             ->args( [service( 'request_stack' )] )
 
-            // Request and Response headers
-            ->set( Headers::class )
-            ->args( [service( 'request_stack' )] )
-
             // Find and return registered paths
             ->set( Pathfinder::class )
             ->args( [
@@ -62,6 +58,5 @@ final class CoreServiceBundle extends AbstractBundle
 
             // Settings handler
             ->set( Settings::class );
-
     }
 }

@@ -14,8 +14,13 @@ use function Assert\as_string;
 use function Support\getProjectRootDirectory;
 use Throwable;
 
+/**
+ * @template TKey of array-key
+ * @template TValue of string
+ */
 final readonly class Pathfinder
 {
+    /** @var ArrayStore<TKey,TValue> */
     private ArrayStore $pathfinderCache;
 
     public function __construct(
@@ -170,7 +175,7 @@ final readonly class Pathfinder
     /**
      * Retrieve the Pathfinder {@see ArrayStore} cache.
      *
-     * @return ArrayStore
+     * @return ArrayStore<TKey,TValue>
      */
     private function pathfinder() : ArrayStore
     {
