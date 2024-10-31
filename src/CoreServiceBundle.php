@@ -57,6 +57,7 @@ final class CoreServiceBundle extends AbstractBundle
             ] )
 
             // Settings handler
-            ->set( Settings::class );
+            ->set( Settings::class )
+            ->args( ['%kernel.cache_dir%/framework-settings.php'] );
     }
 }
