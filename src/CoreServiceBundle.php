@@ -54,10 +54,6 @@ final class CoreServiceBundle extends AbstractBundle
             ->args( [
                 service( 'parameter_bag' ),
                 '%kernel.cache_dir%/pathfinder.cache.php',
-            ] )
-
-            // Settings handler
-            ->set( Settings::class )
-            ->args( ['%kernel.cache_dir%/framework-settings.php'] );
+            ] );
     }
 }
