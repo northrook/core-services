@@ -47,13 +47,6 @@ final class CoreServiceBundle extends AbstractBundle
         $services
             // Current Request handler
             ->set( Request::class )
-            ->args( [service( 'request_stack' )] )
-
-            // Find and return registered paths
-            ->set( Pathfinder::class )
-            ->args( [
-                service( 'parameter_bag' ),
-                '%kernel.cache_dir%/pathfinder.cache.php',
-            ] );
+            ->args( [service( 'request_stack' )] );
     }
 }
